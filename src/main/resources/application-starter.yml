@@ -1,0 +1,83 @@
+server:
+  port: 9001
+  error:
+    whitelabel:
+      enabled: false
+
+spring:
+  application:
+    name: trade-api-code-test
+  mvc:
+    throw-exception-if-no-handler-found: true
+  resources:
+    add-mappings: false
+  cache:
+    cache-names:
+      - rate-limit-buckets
+    caffeine:
+      spec: maximumSize=100000,expireAfterAccess=3600s
+  tomcat:
+    uri-encoding: UTF-8
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://ec2-13-209-76-58.ap-northeast-2.compute.amazonaws.com:3306/demo_schema?characterEncoding=UTF-8&serverTimezone=UTC
+    username: jeff
+    password: dlaxowhd12
+    hikari:
+      maximum-pool-size: 5
+
+bucket4j:
+  enabled: true
+  filters:
+    - cache-name: rate-limit-buckets
+      url: /*
+      http-response-body: "{ \"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"You have exhausted your API Request Quota\" }"
+      rate-limits:
+        - expression: "getHeader('apiKey')"
+          execute-condition: "getHeader('apiKey').startsWith('1676d4e6-')"
+          bandwidths:
+            - capacity: 100
+              time: 1
+              unit: hours
+        - expression: "getHeader('apiKey')"
+          execute-condition: "getHeader('apiKey').startsWith('BX001-')"
+          bandwidths:
+            - capacity: 40
+              time: 1
+              unit: hours
+        - expression: "getHeader('apiKey')"
+          bandwidths:
+            - capacity: 20
+              time: 1
+              unit: hours
+
+api-key:
+  header: apiKey
+  secret: 1676d4e6-c3a8-4596-a75c-1947d5bd980a
+
+#
+# API Versioning은 크게 두 가지 방법으로 나눠서 생각해 볼 수 있다.
+# Http Request Header를 변경하는 방법과 URL (혹은 URI) 의 변형을 통해서 제공하는 방법이다.
+# <p>
+# Header를 변경 할 경우 MIME 을 재정의해서 사용하거나(MIME 벤더 재정의. 예 `application/vnd.jeff.v1+json`) Custom Header를 통해 사용 할 수 있다.
+# 그리고 후자의 경우 URI 혹은 URL을 변형하여 사용 할 수 있다.
+# 개인적으로 후자를 선호한다. 이유는 사용자 접근성과 소스 가독성 때문이다.
+#
+# Header 내 MIME 를 변경하여 사용 할 경우 https://www.iana.org/form/media-types 사이트에서 내가 사용하고자 하는 MIME Vendor를 등록하고
+# 이런 저런 처리를 해야 하는 번거로움이 있다. (물론 등록 안해도 사용 할 수 있지만 그럴 경우 의미가 퇴색 되므로...)
+#
+# Custom Header 항목을 추가해서 사용할 경우 MIME보다야 깔끔하게 접근해서 사용 할 수 있다는 장점이 있겠다. 그러나 이 것도 부족하다.
+# 왜냐하면 REST API는 내부 인터페이스용보다 외부의 이용자 관점에서 보는게 맞다고 생각한다.
+#
+# 그 관점에서 봤을 때 URI나 URL에서 버전을 나타내어 주는게 사용자 가독성 측면에서 오류가 줄어들 것 이라고 생각한다.
+# 더 나아가서 개발 하는 관점에서도 사용자가 얻는 이점을 똑같이 얻으므로 개발 및 관리 오류를 줄일 수 있다고 생각한다.
+#
+#  - ps. 엄격한 의미로 보면 URL/URI에 버전명을 쓰는 것은 옳지 않으나 (REST 창시자가 싫어함..) 상황에 맞게 적절히 사용하는게 중요 하다고 본다.
+#
+api:
+  version:
+    v1: v1
+    v2: v2
+    v3: v3
+    v4: v4
+    v5: v5
