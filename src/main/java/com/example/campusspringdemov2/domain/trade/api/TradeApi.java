@@ -27,7 +27,7 @@ public class TradeApi {
     CustomProperties customProperties;
 
     @Autowired
-    private TradeHistoryService tradeHistoryService;
+    private TradeHistoryService TradeHistoryService;
 
     @GetMapping(value = "/date")
     @ResponseBody
@@ -40,7 +40,7 @@ public class TradeApi {
         if (StringUtils.isEmpty(apiKey)) throw new NullApiKeyException(); /* 'apiKey' 헤더 누락 됐을 경우 예외처리 */
         else if (!customProperties.getApiKeySecret().equals(apiKey))
             throw new InvalidApiKeyException(); /* 'apiKey' 안맞을 경우 예외처리 */
-        return new TradeHistoryResponse(tradeHistoryService.getTradeHistoryFindDao(TradeHistoryDateRange.of(startDate, endDate))).response();
+        return new TradeHistoryResponse(TradeHistoryService.getTradeHistoryFindDao(TradeHistoryDateRange.of(startDate, endDate))).response();
 
     }
 }
